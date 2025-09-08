@@ -1,5 +1,5 @@
 # General
-FILES = src/main.c src/shader.c src/paths.c src/glad/glad.c
+FILES = src/main.c src/shader.c src/paths.c src/window.c src/glad/glad.c
 ARGS = -fdiagnostics-color=always -g -Wall -Werror -framework CoreFoundation
 INCLUDES = -Iinclude -lSDL2
 PROG_NAME = Painter
