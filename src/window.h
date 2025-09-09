@@ -21,6 +21,13 @@ typedef struct dispWindow {
     SDL_Window *window;
     int width;
     int height;
+    int mouse_x;
+    int mouse_y;
+    int rmb_down_x;
+    int rmb_down_y;
+    uint running : 1;
+    uint lmb_down : 1;
+    uint rmb_down : 1;
 } dispWindow;
 
 dispWindow *createWindow(const char *title, int width, int height);
