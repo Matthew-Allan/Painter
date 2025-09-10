@@ -16,17 +16,23 @@
 // Set the target FPS.
 #define fps 60// Create an SDL window and an OpenGL context.
 
+typedef struct pixelPos {
+    int x;
+    int y;
+} pixelPos;
+
+typedef struct pixelDim {
+    int w;
+    int h;
+} pixelDim;
+
 // A struct containing window information.
 typedef struct dispWindow {
     SDL_Window *window;
-    int width;
-    int height;
-    int mouse_x;
-    int mouse_y;
-    int prev_mouse_x;
-    int prev_mouse_y;
-    int rmb_down_x;
-    int rmb_down_y;
+    pixelDim size;
+    pixelPos mouse;
+    pixelPos prev_mouse;
+    pixelPos rmb_down_pos;
     uint running : 1;
     uint lmb_down : 1;
     uint rmb_down : 1;

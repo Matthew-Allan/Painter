@@ -67,13 +67,11 @@ dispWindow *createWindow(const char *title, int width, int height) {
     }
 
     // Set viewport to the correct width and height.
-    SDL_GetWindowSizeInPixels(window->window, &window->width, &window->height);
-    glViewport(0, 0, window->width, window->height);
+    SDL_GetWindowSizeInPixels(window->window, &window->size.w, &window->size.h);
+    glViewport(0, 0, window->size.w, window->size.h);
 
     // Set clear colour to black.
     glClearColor(0.1, 0.2, 0.2, 1.0f);
-
-    SDL_GetMouseState(&window->mouse_x, &window->mouse_y);
 
     window->running = 1;
     window->lmb_down = 0;

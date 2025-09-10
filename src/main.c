@@ -15,12 +15,9 @@ typedef struct Canvas {
     GLuint draw_vbo;
     GLuint FBO;
     GLuint tex;
-    uint width;
-    uint height;
-    int off_x;
-    int off_y;
-    int new_off_x;
-    int new_off_y;
+    pixelDim size;
+    pixelPos off;
+    pixelPos new_off;
     float zoom;
 } Canvas;
 
@@ -70,7 +67,7 @@ void genSquareVAO(float top, float btm, float lft, float rgt, GLuint *VAO, GLuin
 
 // Set up a vertex array object that the game board should be rendered on.
 void createCanvasVAO(Canvas *canvas) {
-    genSquareVAO(canvas->height, 0, 0, canvas->width, &canvas->draw_vao, &canvas->draw_vbo);
+    genSquareVAO(canvas->size.h, 0, 0, canvas->size.w, &canvas->draw_vao, &canvas->draw_vbo);
 }
 
 void createCanvasTex(Canvas *canvas) {
@@ -78,12 +75,12 @@ void createCanvasTex(Canvas *canvas) {
     glGenTextures(1, &canvas->tex);
     glBindTexture(GL_TEXTURE_2D, canvas->tex);
 
-    uint32_t *pixels = (uint32_t *) malloc((size_t) canvas->width * canvas->height * 4);
-    for(size_t i = 0; i < (size_t) canvas->width * canvas->height; i++) {
+    uint32_t *pixels = (uint32_t *) malloc((size_t) canvas->size.w * canvas->size.h * 4);
+    for(size_t i = 0; i < (size_t) canvas->size.w * canvas->size.h; i++) {
         pixels[i] = 0xFFFFFFFF;
     }
 
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, canvas->width, canvas->height, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, canvas->size.w, canvas->size.h, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
 
     free(pixels);
 
@@ -107,6 +104,11 @@ int createCanvasFBO(Canvas *canvas) {
     return 0;
 }
 
+void mouseToPixPos(pixelPos *pos, int x, int y, int screen_height) {
+    pos->x = 2 * x;
+    pos->y = screen_height - (2 * y);
+}
+
 // Check for any SDL events. Handles quitting and button presses. Returns if game should keep running.
 void pollEvents(dispWindow *window, Canvas *canvas) {
     SDL_Event event;
@@ -117,13 +119,15 @@ void pollEvents(dispWindow *window, Canvas *canvas) {
             break;
         case SDL_WINDOWEVENT:
             if(event.window.event == SDL_WINDOWEVENT_RESIZED) {
-                SDL_GetWindowSizeInPixels(window->window, &window->width, &window->height);
-                glViewport(0, 0, window->width, window->height);
+                SDL_GetWindowSizeInPixels(window->window, &window->size.w, &window->size.h);
+                glViewport(0, 0, window->size.w, window->size.h);
             }
             break;
+        case SDL_MOUSEWHEEL:
+            canvas->zoom += event.wheel.y * 0.1;
+            break;
         case SDL_MOUSEMOTION:
-            window->mouse_x = event.motion.x;
-            window->mouse_y = event.motion.y;
+            mouseToPixPos(&window->mouse, event.motion.x, event.motion.y, window->size.h);
             break;
 
         case SDL_MOUSEBUTTONUP:
@@ -131,21 +135,19 @@ void pollEvents(dispWindow *window, Canvas *canvas) {
                 window->lmb_down = 0;
             } else if (event.button.button == 3) {
                 window->rmb_down = 0;
-                canvas->off_x += canvas->new_off_x;
-                canvas->off_y += canvas->new_off_y;
+                canvas->off.x += canvas->new_off.x;
+                canvas->off.y += canvas->new_off.y;
             }
             break;
         case SDL_MOUSEBUTTONDOWN:
             if(event.button.button == 1) {
                 window->lmb_down = 1;
-                window->prev_mouse_x = event.button.x;
-                window->prev_mouse_y = event.button.y;
+                mouseToPixPos(&window->prev_mouse, event.button.x, event.button.y, window->size.h);
             } else if (event.button.button == 3) {
                 window->rmb_down = 1;
-                window->rmb_down_x = event.button.x;
-                window->rmb_down_y = event.button.y;
-                canvas->new_off_x = 0;
-                canvas->new_off_y = 0;
+                mouseToPixPos(&window->rmb_down_pos, event.button.x, event.button.y, window->size.h);
+                canvas->new_off.x = 0;
+                canvas->new_off.y = 0;
             }
             break;
         default:
@@ -165,25 +167,27 @@ int runApp(dispWindow *window) {
     }
 
     Canvas canvas;
-    canvas.width = 1800;
-    canvas.height = 1000;
-    canvas.off_x = (window->width - (int) canvas.width) / 2;
-    canvas.off_y = (window->height - (int) canvas.height) / 2;
+    canvas.size.w = 64;
+    canvas.size.h = 64;
+    canvas.off.x = (window->size.w - (int) canvas.size.w) / 2;
+    canvas.off.y = (window->size.h - (int) canvas.size.h) / 2;
+    canvas.zoom = 1;
     createCanvasVAO(&canvas);
     if(createCanvasFBO(&canvas) == -1) {
         return -1;
     }
 
     GLuint canvas_vao;
-    genSquareVAO(canvas.height, 0, 0, canvas.width, &canvas_vao, NULL);
+    genSquareVAO(canvas.size.h, 0, 0, canvas.size.w, &canvas_vao, NULL);
 
     glUseProgram(shader);
     glUniform1i(glGetUniformLocation(shader, "canvas_tex"), CANVAS_TEX);
 
     GLuint offset_loc = glGetUniformLocation(shader, "offset");
     GLuint screen_loc = glGetUniformLocation(shader, "screen_dim");
+    GLuint zoom_loc = glGetUniformLocation(shader, "zoom");
 
-    glUniform2i(offset_loc, canvas.off_x, canvas.off_y);
+    glUniform2i(offset_loc, canvas.off.x, canvas.off.y);
 
     glUseProgram(canvas_shader);
     glUniform1i(glGetUniformLocation(canvas_shader, "canvas_tex"), CANVAS_TEX);
@@ -209,31 +213,32 @@ int runApp(dispWindow *window) {
 
         glUseProgram(canvas_shader);
         if(window->lmb_down) {
-            glUniform2i(prev_mouse_loc, (2 * window->prev_mouse_x) - canvas.off_x, (window->height - (2 * window->prev_mouse_y)) - canvas.off_y);
-            glUniform2i(mouse_loc, (2 * window->mouse_x) - canvas.off_x, (window->height - (2 * window->mouse_y)) - canvas.off_y);
-            window->prev_mouse_x = window->mouse_x;
-            window->prev_mouse_y = window->mouse_y;
+            glUniform2i(prev_mouse_loc, (window->prev_mouse.x  / canvas.zoom) - canvas.off.x, (window->prev_mouse.y / canvas.zoom) - canvas.off.y);
+            glUniform2i(mouse_loc,      (window->mouse.x       / canvas.zoom) - canvas.off.x, (window->mouse.y      / canvas.zoom) - canvas.off.y);
+            window->prev_mouse.x = window->mouse.x;
+            window->prev_mouse.y = window->mouse.y;
         }
         glUniform1i(pen_loc, window->lmb_down);
 
         glBindFramebuffer(GL_FRAMEBUFFER, canvas.FBO);
         glBindVertexArray(canvas.draw_vao);
-        glViewport(0, 0,canvas.width, canvas.height);
+        glViewport(0, 0,canvas.size.w, canvas.size.h);
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
         glUseProgram(shader);
         if(window->rmb_down) {
-            canvas.new_off_x = 2 * (window->mouse_x - window->rmb_down_x);
-            canvas.new_off_y = 2 * (window->rmb_down_y - window->mouse_y);
-            int offset_x = canvas.off_x + canvas.new_off_x;
-            int offset_y = canvas.off_y + canvas.new_off_y;
+            canvas.new_off.x = (window->mouse.x - window->rmb_down_pos.x) / canvas.zoom;
+            canvas.new_off.y = (window->mouse.y - window->rmb_down_pos.y) / canvas.zoom;
+            int offset_x = canvas.off.x + canvas.new_off.x;
+            int offset_y = canvas.off.y + canvas.new_off.y;
             glUniform2i(offset_loc, offset_x, offset_y);
         }
-        glUniform2i(screen_loc, window->width, window->height);
+        glUniform2i(screen_loc, window->size.w, window->size.h);
+        glUniform1f(zoom_loc, canvas.zoom);
 
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
         glBindVertexArray(canvas_vao);
-        glViewport(0, 0, window->width, window->height);
+        glViewport(0, 0, window->size.w, window->size.h);
         glClear(GL_COLOR_BUFFER_BIT);
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
