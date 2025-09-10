@@ -10,7 +10,7 @@ uniform vec4 colour;
 uniform bool pen_down;
 
 void main() {
-    const int size = 4;
+    const int size = 2;
     ivec2 A = mouse_pos;
     ivec2 u = prev_mouse_pos - mouse_pos;
 
