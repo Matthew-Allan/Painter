@@ -20,6 +20,7 @@ typedef struct Canvas {
     pixelPos new_off;
     pixelPos pen;
     pixelPos prev_pen;
+    float zoom_scale;
     float zoom;
 } Canvas;
 
@@ -131,13 +132,12 @@ void pollEvents(dispWindow *window, Canvas *canvas) {
                 // Should keep the pen consistent or something similar (maybe middle of the screen)
             }
             break;
-        case SDL_MOUSEWHEEL: {
-            float a = event.wheel.y * 0.1;
-            canvas->off.x = (window->mouse.x / (canvas->zoom + a)) - canvas->pen.x;
-            canvas->off.y = (window->mouse.y / (canvas->zoom + a)) - canvas->pen.y;
-            canvas->zoom += a;
+        case SDL_MOUSEWHEEL:
+            canvas->zoom_scale += event.wheel.y * 0.1;
+            canvas->zoom = canvas->zoom_scale * canvas->zoom_scale;
+            canvas->off.x = (window->mouse.x / canvas->zoom) - canvas->pen.x;
+            canvas->off.y = (window->mouse.y / canvas->zoom) - canvas->pen.y;
             break;
-        }
         case SDL_MOUSEMOTION:
             mouseToPixPos(&window->mouse, event.motion.x, event.motion.y, window->size.h);
             calculatePenPos(canvas, window);
@@ -188,6 +188,7 @@ int runApp(dispWindow *window) {
     canvas.off.y = (window->size.h - (int) canvas.size.h) / 2;
     canvas.new_off.x = 0;
     canvas.new_off.y = 0;
+    canvas.zoom_scale = 1;
     canvas.zoom = 1;
     createCanvasVAO(&canvas);
     if(createCanvasFBO(&canvas) == -1) {
