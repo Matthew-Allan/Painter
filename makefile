@@ -1,5 +1,7 @@
 # General
-FILES = src/main.c src/shader.c src/paths.c src/window.c src/glad/glad.c
+CORE_FILES = src/shader.c src/paths.c src/window.c src/types.c src/glad/glad.c
+APP_FILES = src/main.c
+FILES = $(APP_FILES) $(CORE_FILES)
 ARGS = -fdiagnostics-color=always -g -Wall -Werror -framework CoreFoundation
 INCLUDES = -Iinclude -lSDL2
 PROG_NAME = Painter
@@ -22,7 +24,8 @@ all: build run
 
 # Build the executable
 build:
-	mkdir $(OUT)
+	mkdir -p $(OUT)
+	ln -s ../shaders $(OUT)/shaders
 	gcc $(ARGS) $(INCLUDES) $(FILES) -o $(PROG_LOC)
 
 # Run the program

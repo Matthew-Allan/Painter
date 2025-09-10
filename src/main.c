@@ -116,7 +116,6 @@ void mouseToPixPos(pixelPos *pos, int x, int y, int screen_height) {
 void calculatePenPos(Canvas *canvas, dispWindow *window) {
     canvas->pen.x = (window->mouse.x / canvas->zoom) - (canvas->off.x + canvas->new_off.x);
     canvas->pen.y = (window->mouse.y / canvas->zoom) - (canvas->off.y + canvas->new_off.y);
-    printf("CALC %f %f\n", canvas->pen.x, canvas->pen.y);
 }
 
 void addNewOff(Canvas *canvas) {
@@ -185,11 +184,11 @@ void pollEvents(dispWindow *window, Canvas *canvas) {
 
 int runApp(dispWindow *window) {
     GLuint canvas_shader;
-    if(buildShader(&canvas_shader, "../shaders/vertex.glsl", "../shaders/fragment.glsl") == -1) {
+    if(buildShader(&canvas_shader, "shaders/vertex.glsl", "shaders/fragment.glsl") == -1) {
         return -1;
     }
     GLuint shader;
-    if(buildShader(&shader, "../shaders/screenvert.glsl", "../shaders/screenfrag.glsl") == -1) {
+    if(buildShader(&shader, "shaders/screenvert.glsl", "shaders/screenfrag.glsl") == -1) {
         return -1;
     }
 
@@ -235,6 +234,7 @@ int runApp(dispWindow *window) {
         }
         // Work out time between last frame and this one.
         uint64_t delta_time = time_value - prev_time;
+        (void) delta_time;
         prev_time = time_value;
 
         glUseProgram(canvas_shader);
