@@ -13,6 +13,7 @@ void main() {
     const int size = 2;
     ivec2 A = mouse_pos;
     ivec2 u = prev_mouse_pos - mouse_pos;
+    u.x |= int(u.x == 0 && u.y == 0);
 
     ivec2 P = ivec2(f_pos);
     ivec2 AP = P - A;
