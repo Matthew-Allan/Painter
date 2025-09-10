@@ -4,6 +4,8 @@
 #define SDL_MAIN_HANDLED
 #include <SDL2/SDL.h>
 
+#include "types.h"
+
 #define GL_MAJOR_VER 3  // The OpenGL major version number to target.
 #define GL_MINOR_VER 3  // The OpenGL minor version number to target.
 
@@ -16,27 +18,12 @@
 // Set the target FPS.
 #define fps 60// Create an SDL window and an OpenGL context.
 
-typedef struct pixelPosi {
-    int x;
-    int y;
-} pixelPosi;
-
-typedef struct pixelPos {
-    float x;
-    float y;
-} pixelPos;
-
-typedef struct pixelDim {
-    int w;
-    int h;
-} pixelDim;
-
 // A struct containing window information.
 typedef struct dispWindow {
     SDL_Window *window;
     pixelDim size;
-    pixelPosi mouse;
-    pixelPosi rmb_down_pos;
+    pixelPos mouse;
+    pixelPos rmb_down_pos;
     uint running : 1;
     uint lmb_down : 1;
     uint rmb_down : 1;

@@ -20,6 +20,7 @@ typedef struct Canvas {
     pixelPos new_off;
     pixelPos pen;
     pixelPos prev_pen;
+    colourRGBA pen_col;
     float zoom_scale;
     float zoom;
 } Canvas;
@@ -107,14 +108,30 @@ int createCanvasFBO(Canvas *canvas) {
     return 0;
 }
 
-void mouseToPixPos(pixelPosi *pos, int x, int y, int screen_height) {
+void mouseToPixPos(pixelPos *pos, int x, int y, int screen_height) {
     pos->x = 2 * x;
     pos->y = screen_height - (2 * y);
 }
 
 void calculatePenPos(Canvas *canvas, dispWindow *window) {
-    canvas->pen.x = (window->mouse.x / canvas->zoom) - canvas->off.x;
-    canvas->pen.y = (window->mouse.y / canvas->zoom) - canvas->off.y;
+    canvas->pen.x = (window->mouse.x / canvas->zoom) - (canvas->off.x + canvas->new_off.x);
+    canvas->pen.y = (window->mouse.y / canvas->zoom) - (canvas->off.y + canvas->new_off.y);
+    printf("CALC %f %f\n", canvas->pen.x, canvas->pen.y);
+}
+
+void addNewOff(Canvas *canvas) {
+    canvas->off.x += canvas->new_off.x;
+    canvas->off.y += canvas->new_off.y;
+    setPixelPos(&canvas->new_off, 0, 0);
+}
+
+void zoomCentered(Canvas *canvas, dispWindow *window, pixelPos *canv_center, pixelPos *wind_center, float zoom) {
+    canvas->zoom_scale += zoom;
+    canvas->zoom = canvas->zoom_scale * canvas->zoom_scale;
+    cpyPixelPos(&window->rmb_down_pos, &window->mouse);
+    addNewOff(canvas);
+    canvas->off.x = (wind_center->x / canvas->zoom) - canv_center->x;
+    canvas->off.y = (wind_center->y / canvas->zoom) - canv_center->y;
 }
 
 // Check for any SDL events. Handles quitting and button presses. Returns if game should keep running.
@@ -133,14 +150,13 @@ void pollEvents(dispWindow *window, Canvas *canvas) {
             }
             break;
         case SDL_MOUSEWHEEL:
-            canvas->zoom_scale += event.wheel.preciseY * 0.1;
-            canvas->zoom = canvas->zoom_scale * canvas->zoom_scale;
-            canvas->off.x = (window->mouse.x / canvas->zoom) - canvas->pen.x;
-            canvas->off.y = (window->mouse.y / canvas->zoom) - canvas->pen.y;
+            zoomCentered(canvas, window, &canvas->pen, &window->mouse, event.wheel.preciseY * 0.1);
             break;
         case SDL_MOUSEMOTION:
             mouseToPixPos(&window->mouse, event.motion.x, event.motion.y, window->size.h);
-            calculatePenPos(canvas, window);
+            if(!window->rmb_down) {
+                calculatePenPos(canvas, window);
+            }
             break;
 
         case SDL_MOUSEBUTTONUP:
@@ -148,18 +164,14 @@ void pollEvents(dispWindow *window, Canvas *canvas) {
                 window->lmb_down = 0;
             } else if (event.button.button == 3) {
                 window->rmb_down = 0;
-                canvas->off.x += canvas->new_off.x;
-                canvas->off.y += canvas->new_off.y;
-                canvas->new_off.x = 0;
-                canvas->new_off.y = 0;
+                addNewOff(canvas);
                 calculatePenPos(canvas, window);
             }
             break;
         case SDL_MOUSEBUTTONDOWN:
             if(event.button.button == 1) {
                 window->lmb_down = 1;
-                canvas->prev_pen.x = canvas->pen.x;
-                canvas->prev_pen.y = canvas->pen.y;
+                cpyPixelPos(&canvas->prev_pen, &canvas->pen);
             } else if (event.button.button == 3) {
                 window->rmb_down = 1;
                 mouseToPixPos(&window->rmb_down_pos, event.button.x, event.button.y, window->size.h);
@@ -182,12 +194,10 @@ int runApp(dispWindow *window) {
     }
 
     Canvas canvas;
-    canvas.size.w = 64;
-    canvas.size.h = 64;
+    setPixelDim(&canvas.size, 64, 64);
     canvas.off.x = (window->size.w - (int) canvas.size.w) / 2;
     canvas.off.y = (window->size.h - (int) canvas.size.h) / 2;
-    canvas.new_off.x = 0;
-    canvas.new_off.y = 0;
+    setPixelPos(&canvas.new_off, 0, 0);
     canvas.zoom_scale = 1;
     canvas.zoom = 1;
     createCanvasVAO(&canvas);
@@ -231,8 +241,7 @@ int runApp(dispWindow *window) {
         if(window->lmb_down) {
             glUniform2i(prev_mouse_loc, canvas.prev_pen.x, canvas.prev_pen.y);
             glUniform2i(mouse_loc, canvas.pen.x, canvas.pen.y);
-            canvas.prev_pen.x = canvas.pen.x;
-            canvas.prev_pen.y = canvas.pen.y;
+            cpyPixelPos(&canvas.prev_pen, &canvas.pen);
         }
         glUniform1i(pen_loc, window->lmb_down);
 
