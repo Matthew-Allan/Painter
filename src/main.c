@@ -133,7 +133,7 @@ void pollEvents(dispWindow *window, Canvas *canvas) {
             }
             break;
         case SDL_MOUSEWHEEL:
-            canvas->zoom_scale += event.wheel.y * 0.1;
+            canvas->zoom_scale += event.wheel.preciseY * 0.1;
             canvas->zoom = canvas->zoom_scale * canvas->zoom_scale;
             canvas->off.x = (window->mouse.x / canvas->zoom) - canvas->pen.x;
             canvas->off.y = (window->mouse.y / canvas->zoom) - canvas->pen.y;
