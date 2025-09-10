@@ -21,6 +21,7 @@ typedef struct Canvas {
     int off_y;
     int new_off_x;
     int new_off_y;
+    float zoom;
 } Canvas;
 
 void genSquareVAO(float top, float btm, float lft, float rgt, GLuint *VAO, GLuint *VBO) {
@@ -137,6 +138,8 @@ void pollEvents(dispWindow *window, Canvas *canvas) {
         case SDL_MOUSEBUTTONDOWN:
             if(event.button.button == 1) {
                 window->lmb_down = 1;
+                window->prev_mouse_x = event.button.x;
+                window->prev_mouse_y = event.button.y;
             } else if (event.button.button == 3) {
                 window->rmb_down = 1;
                 window->rmb_down_x = event.button.x;
@@ -164,8 +167,8 @@ int runApp(dispWindow *window) {
     Canvas canvas;
     canvas.width = 1800;
     canvas.height = 1000;
-    canvas.off_x = (window->width - (int) canvas.width) / 4;
-    canvas.off_y = -(window->height - (int) canvas.height) / 4;
+    canvas.off_x = (window->width - (int) canvas.width) / 2;
+    canvas.off_y = (window->height - (int) canvas.height) / 2;
     createCanvasVAO(&canvas);
     if(createCanvasFBO(&canvas) == -1) {
         return -1;
@@ -178,7 +181,7 @@ int runApp(dispWindow *window) {
     glUniform1i(glGetUniformLocation(shader, "canvas_tex"), CANVAS_TEX);
 
     GLuint offset_loc = glGetUniformLocation(shader, "offset");
-    GLuint sh_screen_loc = glGetUniformLocation(shader, "screen_dim");
+    GLuint screen_loc = glGetUniformLocation(shader, "screen_dim");
 
     glUniform2i(offset_loc, canvas.off_x, canvas.off_y);
 
@@ -186,8 +189,8 @@ int runApp(dispWindow *window) {
     glUniform1i(glGetUniformLocation(canvas_shader, "canvas_tex"), CANVAS_TEX);
 
     GLuint mouse_loc = glGetUniformLocation(canvas_shader, "mouse_pos");
+    GLuint prev_mouse_loc = glGetUniformLocation(canvas_shader, "prev_mouse_pos");
     GLuint pen_loc = glGetUniformLocation(canvas_shader, "pen_down");
-    GLuint cv_screen_loc = glGetUniformLocation(canvas_shader, "screen_dim");
 
     // Set the time in ms that the game starts.
     uint64_t prev_time = SDL_GetTicks64();
@@ -206,10 +209,12 @@ int runApp(dispWindow *window) {
 
         glUseProgram(canvas_shader);
         if(window->lmb_down) {
-            glUniform2i(mouse_loc, 2 * (window->mouse_x - canvas.off_x), 2 * (window->mouse_y - canvas.off_y));
+            glUniform2i(prev_mouse_loc, (2 * window->prev_mouse_x) - canvas.off_x, (window->height - (2 * window->prev_mouse_y)) - canvas.off_y);
+            glUniform2i(mouse_loc, (2 * window->mouse_x) - canvas.off_x, (window->height - (2 * window->mouse_y)) - canvas.off_y);
+            window->prev_mouse_x = window->mouse_x;
+            window->prev_mouse_y = window->mouse_y;
         }
         glUniform1i(pen_loc, window->lmb_down);
-        glUniform2i(cv_screen_loc, window->width, window->height);
 
         glBindFramebuffer(GL_FRAMEBUFFER, canvas.FBO);
         glBindVertexArray(canvas.draw_vao);
@@ -218,13 +223,13 @@ int runApp(dispWindow *window) {
 
         glUseProgram(shader);
         if(window->rmb_down) {
-            canvas.new_off_x = window->mouse_x - window->rmb_down_x;
-            canvas.new_off_y = window->mouse_y - window->rmb_down_y;
+            canvas.new_off_x = 2 * (window->mouse_x - window->rmb_down_x);
+            canvas.new_off_y = 2 * (window->rmb_down_y - window->mouse_y);
             int offset_x = canvas.off_x + canvas.new_off_x;
             int offset_y = canvas.off_y + canvas.new_off_y;
             glUniform2i(offset_loc, offset_x, offset_y);
         }
-        glUniform2i(sh_screen_loc, window->width, window->height);
+        glUniform2i(screen_loc, window->width, window->height);
 
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
         glBindVertexArray(canvas_vao);

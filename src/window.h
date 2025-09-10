@@ -23,6 +23,8 @@ typedef struct dispWindow {
     int height;
     int mouse_x;
     int mouse_y;
+    int prev_mouse_x;
+    int prev_mouse_y;
     int rmb_down_x;
     int rmb_down_y;
     uint running : 1;
