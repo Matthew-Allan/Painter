@@ -15,12 +15,12 @@ typedef struct Canvas {
     GLuint draw_vbo;
     GLuint FBO;
     GLuint tex;
-    pixelDim size;
-    pixelPos off;
-    pixelPos new_off;
-    pixelPos pen;
-    pixelPos prev_pen;
-    colourRGBA pen_col;
+    dim2 size;
+    vec2 off;
+    vec2 new_off;
+    vec2 pen;
+    vec2 prev_pen;
+    colRGBA pen_col;
     float zoom_scale;
     float zoom;
 } Canvas;
@@ -108,7 +108,7 @@ int createCanvasFBO(Canvas *canvas) {
     return 0;
 }
 
-void mouseToPixPos(pixelPos *pos, int x, int y, int screen_height) {
+void mouseToPixPos(vec2 *pos, int x, int y, int screen_height) {
     pos->x = 2 * x;
     pos->y = screen_height - (2 * y);
 }
@@ -121,13 +121,13 @@ void calculatePenPos(Canvas *canvas, dispWindow *window) {
 void addNewOff(Canvas *canvas) {
     canvas->off.x += canvas->new_off.x;
     canvas->off.y += canvas->new_off.y;
-    setPixelPos(&canvas->new_off, 0, 0);
+    setVec2(&canvas->new_off, 0, 0);
 }
 
-void zoomCentered(Canvas *canvas, dispWindow *window, pixelPos *canv_center, pixelPos *wind_center, float zoom) {
+void zoomCentered(Canvas *canvas, dispWindow *window, vec2 *canv_center, vec2 *wind_center, float zoom) {
     canvas->zoom_scale += zoom;
     canvas->zoom = canvas->zoom_scale * canvas->zoom_scale;
-    cpyPixelPos(&window->rmb_down_pos, &window->mouse);
+    cpyVec2(&window->rmb_down_pos, &window->mouse);
     addNewOff(canvas);
     canvas->off.x = (wind_center->x / canvas->zoom) - canv_center->x;
     canvas->off.y = (wind_center->y / canvas->zoom) - canv_center->y;
@@ -143,8 +143,7 @@ void pollEvents(dispWindow *window, Canvas *canvas) {
             break;
         case SDL_WINDOWEVENT:
             if(event.window.event == SDL_WINDOWEVENT_RESIZED) {
-                SDL_GetWindowSizeInPixels(window->window, &window->size.w, &window->size.h);
-                glViewport(0, 0, window->size.w, window->size.h);
+                updateWindowSize(window);
                 // Should keep the pen consistent or something similar (maybe middle of the screen)
             }
             break;
@@ -170,7 +169,7 @@ void pollEvents(dispWindow *window, Canvas *canvas) {
         case SDL_MOUSEBUTTONDOWN:
             if(event.button.button == 1) {
                 window->lmb_down = 1;
-                cpyPixelPos(&canvas->prev_pen, &canvas->pen);
+                cpyVec2(&canvas->prev_pen, &canvas->pen);
             } else if (event.button.button == 3) {
                 window->rmb_down = 1;
                 mouseToPixPos(&window->rmb_down_pos, event.button.x, event.button.y, window->size.h);
@@ -193,10 +192,10 @@ int runApp(dispWindow *window) {
     }
 
     Canvas canvas;
-    setPixelDim(&canvas.size, 64, 64);
+    setDim2(&canvas.size, 64, 64);
     canvas.off.x = (window->size.w - (int) canvas.size.w) / 2;
     canvas.off.y = (window->size.h - (int) canvas.size.h) / 2;
-    setPixelPos(&canvas.new_off, 0, 0);
+    setVec2(&canvas.new_off, 0, 0);
     canvas.zoom_scale = 1;
     canvas.zoom = 1;
     createCanvasVAO(&canvas);
@@ -241,7 +240,7 @@ int runApp(dispWindow *window) {
         if(window->lmb_down) {
             glUniform2i(prev_mouse_loc, canvas.prev_pen.x, canvas.prev_pen.y);
             glUniform2i(mouse_loc, canvas.pen.x, canvas.pen.y);
-            cpyPixelPos(&canvas.prev_pen, &canvas.pen);
+            cpyVec2(&canvas.prev_pen, &canvas.pen);
         }
         glUniform1i(pen_loc, window->lmb_down);
 

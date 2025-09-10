@@ -11,6 +11,12 @@ void closeWindow(dispWindow *window) {
     SDL_Quit();
 }
 
+void updateWindowSize(dispWindow *window) {
+    int w, h;
+    SDL_GetWindowSizeInPixels(window->window, &w, &h);
+    setDim2(&window->size, w, h);
+}
+
 SDL_Window *createSDLWindow(const char *title, int width, int height) {
     // Init SDL.
     printf("Initing SDL.\n");
@@ -67,8 +73,7 @@ dispWindow *createWindow(const char *title, int width, int height) {
     }
 
     // Set viewport to the correct width and height.
-    SDL_GetWindowSizeInPixels(window->window, &window->size.w, &window->size.h);
-    glViewport(0, 0, window->size.w, window->size.h);
+    updateWindowSize(window);
 
     // Set clear colour to black.
     glClearColor(0.1, 0.2, 0.2, 1.0f);

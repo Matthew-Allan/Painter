@@ -1,55 +1,45 @@
 #include "types.h"
 
-void setPixelPosi(pixelPosi *pos, int x, int y) {
+void setIVec2(ivec2 *pos, int x, int y) {
     pos->x = x;
     pos->y = y;
 }
 
-void setPixelPos(pixelPos *pos, float x, float y) {
+void setVec2(vec2 *pos, float x, float y) {
     pos->x = x;
     pos->y = y;
 }
 
-void setPixelDim(pixelDim *dim, int w, int h) {
-    dim->w = w;
-    dim->h = h;
-}
-
-void setColourRGB(colourRGB *col, uint8_t r, uint8_t g, uint8_t b) {
+void setColRGB(colRGB *col, uint8_t r, uint8_t g, uint8_t b) {
     col->r = r;
     col->g = g;
     col->b = b;
 }
 
-void setColourRGBA(colourRGBA *col, uint8_t r, uint8_t g, uint8_t b, uint8_t a) {
+void setColRGBA(colRGBA *col, uint8_t r, uint8_t g, uint8_t b, uint8_t a) {
     col->r = r;
     col->g = g;
     col->b = b;
     col->a = a;
 }
 
-void cpyPixelPosi(pixelPosi *dst, pixelPosi *src) {
+void cpyIVec2(ivec2 *dst, ivec2 *src) {
     dst->x = src->x;
     dst->y = src->y;
 }
 
-void cpyPixelPos(pixelPos *dst, pixelPos *src) {
+void cpyVec2(vec2 *dst, vec2 *src) {
     dst->x = src->x;
     dst->y = src->y;
 }
 
-void cpyPixelDim(pixelDim *dst, pixelDim *src) {
-    dst->w = src->w;
-    dst->h = src->h;
-}
-
-void cpyColourRGB(colourRGB *dst, colourRGB *src) {
+void cpyColRGB(colRGB *dst, colRGB *src) {
     dst->r = src->r;
     dst->g = src->g;
     dst->b = src->b;
 }
 
-void cpyColourRGBA(colourRGBA *dst, colourRGBA *src) {
+void cpyColRGBA(colRGBA *dst, colRGBA *src) {
     dst->r = src->r;
     dst->g = src->g;
     dst->b = src->b;

@@ -3,47 +3,44 @@
 
 #include <stdint.h>
 
-typedef struct pixelPosi {
+typedef struct vec2 {
+    union {float x; float w;};
+    union {float y; float h;};
+} vec2;
+
+typedef vec2 dim2;
+
+void setVec2(vec2 *pos, float x, float y);
+void cpyVec2(vec2 *dst, vec2 *src);
+
+#define setDim2(dim, w, h) setVec2(dim, w, h);
+#define cpyDim2(dst, src) setVec2(dst, src);
+
+typedef struct ivec2 {
     int x;
     int y;
-} pixelPosi;
+} ivec2;
 
-void setPixelPosi(pixelPosi *pos, int x, int y);
-void cpyPixelPosi(pixelPosi *dst, pixelPosi *src);
+void setIVec2(ivec2 *pos, int x, int y);
+void cpyIVec2(ivec2 *dst, ivec2 *src);
 
-typedef struct pixelPos {
-    float x;
-    float y;
-} pixelPos;
-
-void setPixelPos(pixelPos *pos, float x, float y);
-void cpyPixelPos(pixelPos *dst, pixelPos *src);
-
-typedef struct pixelDim {
-    int w;
-    int h;
-} pixelDim;
-
-void setPixelDim(pixelDim *dim, int w, int h);
-void cpyPixelDim(pixelDim *dst, pixelDim *src);
-
-typedef struct colourRGB {
+typedef struct colRGB {
     uint8_t r;
     uint8_t g;
     uint8_t b;
-} colourRGB;
+} colRGB;
 
-void setColourRGB(colourRGB *col, uint8_t r, uint8_t g, uint8_t b);
-void cpyColourRGB(colourRGB *dst, colourRGB *src);
+void setColRGB(colRGB *col, uint8_t r, uint8_t g, uint8_t b);
+void cpyColRGB(colRGB *dst, colRGB *src);
 
-typedef struct colourRGBA {
+typedef struct colRGBA {
     uint8_t r;
     uint8_t g;
     uint8_t b;
     uint8_t a;
-} colourRGBA;
+} colRGBA;
 
-void setColourRGBA(colourRGBA *col, uint8_t r, uint8_t g, uint8_t b, uint8_t a);
-void cpyColourRGBA(colourRGBA *dst, colourRGBA *src);
+void setColRGBA(colRGBA *col, uint8_t r, uint8_t g, uint8_t b, uint8_t a);
+void cpyColRGBA(colRGBA *dst, colRGBA *src);
 
 #endif

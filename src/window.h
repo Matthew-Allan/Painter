@@ -21,9 +21,9 @@
 // A struct containing window information.
 typedef struct dispWindow {
     SDL_Window *window;
-    pixelDim size;
-    pixelPos mouse;
-    pixelPos rmb_down_pos;
+    dim2 size;
+    vec2 mouse;
+    vec2 rmb_down_pos;
     uint running : 1;
     uint lmb_down : 1;
     uint rmb_down : 1;
@@ -33,5 +33,6 @@ dispWindow *createWindow(const char *title, int width, int height);
 void closeWindow(dispWindow *window);
 
 void swapWindow(dispWindow *window);
+void updateWindowSize(dispWindow *window);
 
 #endif

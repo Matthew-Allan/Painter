@@ -25,7 +25,7 @@ all: build run
 # Build the executable
 build:
 	mkdir -p $(OUT)
-	ln -s ../shaders $(OUT)/shaders
+	ln -sf ../shaders $(OUT)/
 	gcc $(ARGS) $(INCLUDES) $(FILES) -o $(PROG_LOC)
 
 # Run the program
@@ -34,7 +34,7 @@ run:
 
 # Clean any files that may have been created on build
 clean:
-	rm -f -r $(OUT)
+	rm -fr $(OUT)
 
 # Create a .app package
 mac: clean build
