@@ -75,9 +75,6 @@ dispWindow *createWindow(const char *title, int width, int height) {
     // Set viewport to the correct width and height.
     updateWindowSize(window);
 
-    // Set clear colour to black.
-    glClearColor(0.1, 0.2, 0.2, 1.0f);
-
     window->running = 1;
     window->lmb_down = 0;
     window->rmb_down = 0;

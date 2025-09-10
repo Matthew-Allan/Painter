@@ -79,14 +79,7 @@ void createCanvasTex(Canvas *canvas) {
     glGenTextures(1, &canvas->tex);
     glBindTexture(GL_TEXTURE_2D, canvas->tex);
 
-    uint32_t *pixels = (uint32_t *) malloc((size_t) canvas->size.w * canvas->size.h * 4);
-    for(size_t i = 0; i < (size_t) canvas->size.w * canvas->size.h; i++) {
-        pixels[i] = 0xFFFFFFFF;
-    }
-
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, canvas->size.w, canvas->size.h, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
-
-    free(pixels);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, canvas->size.w, canvas->size.h, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
@@ -104,6 +97,9 @@ int createCanvasFBO(Canvas *canvas) {
         printf("Framebuffer incomplete\n");
         return -1;
     }
+
+    glClearColor(1, 1, 1, 1);
+    glClear(GL_COLOR_BUFFER_BIT);
 
     return 0;
 }
@@ -262,6 +258,7 @@ int runApp(dispWindow *window) {
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
         glBindVertexArray(canvas_vao);
         glViewport(0, 0, window->size.w, window->size.h);
+        glClearColor(0.1, 0.2, 0.2, 1.0);
         glClear(GL_COLOR_BUFFER_BIT);
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
