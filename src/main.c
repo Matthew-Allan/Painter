@@ -142,7 +142,6 @@ void pollEvents(dispWindow *window, Canvas *canvas) {
         case SDL_WINDOWEVENT:
             if(event.window.event == SDL_WINDOWEVENT_RESIZED) {
                 updateWindowSize(window);
-                // Should keep the pen consistent or something similar (maybe middle of the screen)
             }
             break;
         case SDL_MOUSEWHEEL:
