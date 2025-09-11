@@ -1,8 +1,9 @@
 #ifndef CANVAS_H
 #define CANVAS_H
 
-#include "types.h"
-#include "window.h"
+#include "core/types.h"
+#include "core/window.h"
+#include "core/mesh.h"
 
 typedef struct canvasShader {
     GLuint prog;
@@ -13,9 +14,9 @@ typedef struct canvasShader {
 } canvasShader;
 
 typedef struct Canvas {
+    colRGBA *pixels;
     canvasShader shader;
-    GLuint draw_vao;
-    GLuint draw_vbo;
+    meshData mesh;
     GLuint FBO;
     GLuint tex;
     dim2 size;
@@ -35,6 +36,7 @@ typedef struct Canvas {
 } Canvas;
 
 int initCanvas(Canvas *canvas, dispWindow *window, int width, int height);
+void closeCanvas(Canvas *canvas);
 
 void updateCanvas(Canvas *canvas);
 

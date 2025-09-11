@@ -1,7 +1,7 @@
 #include "canvas.h"
 
+#include "core/shader.h"
 #include "tex.h"
-#include "shader.h"
 
 void calculatePenPos(Canvas *canvas, dispWindow *window) {
     subVec2I(divVec2S(&canvas->pen, &window->mouse, canvas->zoom), &canvas->off);
@@ -28,18 +28,22 @@ void zoomCentered(Canvas *canvas, dispWindow *window, vec2 *canv_center, vec2 *w
 }
 
 void createCanvasVAO(Canvas *canvas) {
-    genSquareVAO(canvas->size.h, 0, 0, canvas->size.w, &canvas->draw_vao, &canvas->draw_vbo);
+    genSquareMesh(canvas->size.h, 0, 0, canvas->size.w, &canvas->mesh);
+}
+
+void uploadCanvasTex(Canvas *canvas) {
+    glBindTexture(GL_TEXTURE_2D, canvas->tex);
+
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, canvas->size.w, canvas->size.h, 0, GL_RGBA, GL_UNSIGNED_BYTE, canvas->pixels);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 }
 
 void createCanvasTex(Canvas *canvas) {
     glActiveTexture(TEX(CANVAS_TEX));
     glGenTextures(1, &canvas->tex);
-    glBindTexture(GL_TEXTURE_2D, canvas->tex);
-
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, canvas->size.w, canvas->size.h, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
-
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    uploadCanvasTex(canvas);
 }
 
 int createCanvasFBO(Canvas *canvas) {
@@ -54,9 +58,6 @@ int createCanvasFBO(Canvas *canvas) {
         printf("Framebuffer incomplete\n");
         return -1;
     }
-
-    glClearColor(1, 1, 1, 1);
-    glClear(GL_COLOR_BUFFER_BIT);
 
     return 0;
 }
@@ -77,10 +78,24 @@ void updateCanvas(Canvas *canvas) {
     uniformIVec2(canvas->shader.prev_mouse, &canvas->prev_pen);
     cpyVec2(&canvas->prev_pen, &canvas->pen);
 
+    uploadCanvasTex(canvas);
+
     glBindFramebuffer(GL_FRAMEBUFFER, canvas->FBO);
-    glBindVertexArray(canvas->draw_vao);
+    glBindVertexArray(canvas->mesh.vao);
     glViewport(0, 0,canvas->size.w, canvas->size.h);
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+}
+
+int initPixels(Canvas *canvas) {
+    size_t size = sizeof(colRGBA) * canvas->size.w * canvas->size.h;
+    canvas->pixels = (colRGBA *) malloc(size);
+    if(canvas->pixels == NULL) {
+        return -1;
+    }
+    for(int i = 0; i < size; i++) {
+        ((uint8_t *) canvas->pixels)[i] = 255;
+    }
+    return 0;
 }
 
 int initCanvas(Canvas *canvas, dispWindow *window, int width, int height) {
@@ -90,12 +105,17 @@ int initCanvas(Canvas *canvas, dispWindow *window, int width, int height) {
     rstBaseOff(canvas);
     canvas->zoom_scale = 1;
     canvas->zoom = 1;
-    canvas->pen_size = 4;
+    canvas->pen_size = 1;
     canvas->zoom_updt = 1;
     canvas->size_updt = 1;
     canvas->off_updt = 1;
     canvas->col_updt = 1;
     createCanvasVAO(canvas);
+
+    if(initPixels(canvas) == -1) {
+        return -1;
+    }
+
     if(createCanvasFBO(canvas) == -1) {
         return -1;
     }
@@ -112,4 +132,12 @@ int initCanvas(Canvas *canvas, dispWindow *window, int width, int height) {
     canvas->shader.colour = glGetUniformLocation(canvas->shader.prog, "colour");
     canvas->shader.size = glGetUniformLocation(canvas->shader.prog, "size");
     return 0;
+}
+
+void closeCanvas(Canvas *canvas) {
+    free(canvas->pixels);
+    glDeleteFramebuffers(1, &canvas->FBO);
+    glDeleteTextures(1, &canvas->tex);
+    glDeleteProgram(canvas->shader.prog);
+    closeMesh(&canvas->mesh);
 }

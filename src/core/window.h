@@ -39,6 +39,4 @@ void updateWindowSize(dispWindow *window);
 
 void mouseToVec2(vec2 *pos, vec2 *scale, int x, int y);
 
-void genSquareVAO(float top, float btm, float lft, float rgt, GLuint *VAO, GLuint *VBO);
-
 #endif

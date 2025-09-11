@@ -3,8 +3,8 @@
 #include <math.h>
 
 #include <glad/glad.h>
-#include "window.h"
-#include "shader.h"
+#include "core/window.h"
+#include "core/shader.h"
 #include "canvas.h"
 #include "tex.h"
 
@@ -39,7 +39,7 @@ void updateScreen(Canvas *canvas, dispWindow *window, screenShader *shader) {
     }
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    glBindVertexArray(canvas->draw_vao);
+    glBindVertexArray(canvas->mesh.vao);
     glViewport(0, 0, window->size.w, window->size.h);
     glClearColor(0.1, 0.2, 0.2, 1.0);
     glClear(GL_COLOR_BUFFER_BIT);
@@ -140,6 +140,8 @@ int runApp(dispWindow *window) {
 
         swapWindow(window);
     }
+
+    closeCanvas(&canvas);
 
     return 0;
 }
