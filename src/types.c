@@ -76,6 +76,18 @@ void printVec2(vec2 *vec, const char *end) {
     printf("(%g, %g)%s", vec->x, vec->y, end);
 }
 
+void uniformVec2(GLuint loc, vec2 *vec) {
+    glUniform2f(loc, vec->x, vec->y);
+}
+
+void uniformIVec2(GLuint loc, vec2 *vec) {
+    glUniform2i(loc, vec->x, vec->y);
+}
+
+void uniformColRGBA(GLuint loc, colRGBA *col) {
+    glUniform4f(loc, col->r / 255.f, col->g / 255.f, col->b / 255.f, col->a / 255.f);
+}
+
 void setColRGB(colRGB *col, uint8_t r, uint8_t g, uint8_t b) {
     col->r = r;
     col->g = g;

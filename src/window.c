@@ -2,6 +2,54 @@
 
 #include <glad/glad.h>
 
+void genSquareVAO(float top, float btm, float lft, float rgt, GLuint *VAO, GLuint *VBO) {
+    GLuint vbo_temp;
+    if(VBO == NULL) {
+        VBO = &vbo_temp;
+    }
+
+    float verticies[] = {
+        rgt, top, // top right
+        rgt, btm, // bottom right
+        lft, btm, // bottom left
+        lft, top, // top left 
+    };
+
+    uint indices[] = {
+        0, 1, 3,   // first triangle
+        1, 2, 3    // second triangle
+    };
+
+    // Generate a vertex array object.
+    glGenVertexArrays(1, VAO);
+
+    // Bind the vertex array object.
+    glBindVertexArray(*VAO);
+
+    // Generate buffer objects.
+    GLuint EBO;
+    glGenBuffers(1, VBO);
+    glGenBuffers(1, &EBO);
+
+    // Bind the virtual and element buffer objects.
+    glBindBuffer(GL_ARRAY_BUFFER, *VBO);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+
+    // Send the vertex and index data to the buffer objects.
+    glBufferData(GL_ARRAY_BUFFER, sizeof(verticies), verticies, GL_STATIC_DRAW);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+
+    // Tell the shader how to interpret the VBO.
+    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), 0);
+
+    // Enable the attributes.
+    glEnableVertexAttribArray(0);
+}
+
+void mouseToVec2(vec2 *pos, vec2 *scale, int x, int y) {
+    mltVec2V(pos, scale, x, y);
+}
+
 void swapWindow(dispWindow *window) {
     SDL_GL_SwapWindow(window->window);
 }

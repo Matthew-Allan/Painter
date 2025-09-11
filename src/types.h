@@ -2,6 +2,8 @@
 #define TYPES_H
 
 #include <stdint.h>
+#include "glad/glad.h"
+#include <sys/types.h>
 
 typedef struct vec2 {
     union {float x; float w;};
@@ -55,6 +57,10 @@ vec2 *mltVec2V(vec2 *dst, vec2 *src, float x, float y);
 vec2 *mltVec2VI(vec2 *dst, float x, float y);
 vec2 *mltVec2S(vec2 *dst, vec2 *src, float val);
 vec2 *mltVec2SI(vec2 *dst, float val);
+
+void uniformVec2(GLuint loc, vec2 *vec);
+void uniformIVec2(GLuint loc, vec2 *vec);
+void uniformColRGBA(GLuint loc, colRGBA *col);
 
 #define setDim2(dim, w, h) setVec2(dim, w, h)
 #define cpyDim2(dst, src) setVec2(dst, src)
