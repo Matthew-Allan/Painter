@@ -7,7 +7,6 @@ uniform sampler2D canvas_tex;
 uniform ivec2 mouse_pos;
 uniform ivec2 prev_mouse_pos;
 uniform vec4 colour;
-uniform bool pen_down;
 
 void main() {
     const int size = 2;
@@ -21,7 +20,6 @@ void main() {
     float dist = cross(vec3(AP, 0), vec3(u, 0)).z / length(u);
 
     bool is_coloured = (
-        pen_down && 
         abs(dist) < size &&
         P.x < max(mouse_pos.x, prev_mouse_pos.x) + size &&
         P.x > min(mouse_pos.x, prev_mouse_pos.x) - size &&

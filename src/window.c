@@ -15,6 +15,7 @@ void updateWindowSize(dispWindow *window) {
     int w, h;
     SDL_GetWindowSizeInPixels(window->window, &w, &h);
     setDim2(&window->size, w, h);
+    window->resized = 1;
 }
 
 SDL_Window *createSDLWindow(const char *title, int width, int height) {

@@ -28,6 +28,7 @@ typedef struct dispWindow {
     uint running : 1;
     uint lmb_down : 1;
     uint rmb_down : 1;
+    uint resized : 1;
 } dispWindow;
 
 dispWindow *createWindow(const char *title, int width, int height);
