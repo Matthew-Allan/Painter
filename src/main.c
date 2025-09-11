@@ -13,6 +13,20 @@
 
 #define CANVAS_TEX 0
 
+typedef struct screenShader {
+    GLuint prog;
+    GLuint dim;
+    GLuint off;
+    GLuint zoom;
+} screenShader;
+
+typedef struct canvasShader {
+    GLuint prog;
+    GLuint mouse;
+    GLuint prev_mouse;
+    GLuint colour;
+} canvasShader;
+
 typedef struct Canvas {
     GLuint draw_vao;
     GLuint draw_vbo;
@@ -29,6 +43,7 @@ typedef struct Canvas {
     float zoom;
     uint zoom_updt : 1;
     uint off_updt : 1;
+    uint col_updt : 1;
 } Canvas;
 
 void genSquareVAO(float top, float btm, float lft, float rgt, GLuint *VAO, GLuint *VBO) {
@@ -149,6 +164,52 @@ void zoomCentered(Canvas *canvas, dispWindow *window, vec2 *canv_center, vec2 *w
     updateOff(canvas);
 }
 
+void updateCanvas(Canvas *canvas, canvasShader *shader) {
+    glUseProgram(shader->prog);
+
+    if(canvas->col_updt) {
+        canvas->col_updt = 0;
+        uniformColRGBA(shader->colour, &canvas->pen_col);
+    }
+
+    uniformIVec2(shader->mouse, &canvas->pen);
+    uniformIVec2(shader->prev_mouse, &canvas->prev_pen);
+    cpyVec2(&canvas->prev_pen, &canvas->pen);
+
+    glBindFramebuffer(GL_FRAMEBUFFER, canvas->FBO);
+    glBindVertexArray(canvas->draw_vao);
+    glViewport(0, 0,canvas->size.w, canvas->size.h);
+    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+}
+
+void updateScreen(Canvas *canvas, dispWindow *window, screenShader *shader, GLuint screen_vao) {
+    glUseProgram(shader->prog);
+    if(window->rmb_down) {
+        divVec2SI(subVec2(&canvas->new_off, &window->mouse, &window->rmb_down_pos), canvas->zoom);
+        updateOff(canvas);
+    }
+
+    if(window->resized) {
+        window->resized = 0;
+        uniformIVec2(shader->dim, &window->size);
+    }
+    if(canvas->off_updt) {
+        canvas->off_updt = 0;
+        uniformVec2(shader->off, &canvas->off);
+    }
+    if(canvas->zoom_updt) {
+        canvas->zoom_updt = 0;
+        glUniform1f(shader->zoom, canvas->zoom);
+    }
+
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glBindVertexArray(screen_vao);
+    glViewport(0, 0, window->size.w, window->size.h);
+    glClearColor(0.1, 0.2, 0.2, 1.0);
+    glClear(GL_COLOR_BUFFER_BIT);
+    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+}
+
 // Check for any SDL events. Handles quitting and button presses. Returns if game should keep running.
 void pollEvents(dispWindow *window, Canvas *canvas) {
     SDL_Event event;
@@ -197,47 +258,47 @@ void pollEvents(dispWindow *window, Canvas *canvas) {
 }
 
 int runApp(dispWindow *window) {
-    GLuint canvas_shader;
-    if(buildShader(&canvas_shader, "shaders/canvas/vert.glsl", "shaders/canvas/frag.glsl") == -1) {
-        return -1;
-    }
-    GLuint screen_shader;
-    if(buildShader(&screen_shader, "shaders/screen/vert.glsl", "shaders/screen/frag.glsl") == -1) {
+    canvasShader canvas_shader;
+    if(buildShader(&canvas_shader.prog, "shaders/canvas/vert.glsl", "shaders/canvas/frag.glsl") == -1) {
         return -1;
     }
 
+    glUseProgram(canvas_shader.prog);
+    glUniform1i(glGetUniformLocation(canvas_shader.prog, "canvas_tex"), CANVAS_TEX);
+
+    canvas_shader.mouse = glGetUniformLocation(canvas_shader.prog, "mouse_pos");
+    canvas_shader.prev_mouse = glGetUniformLocation(canvas_shader.prog, "prev_mouse_pos");
+    canvas_shader.colour = glGetUniformLocation(canvas_shader.prog, "colour");
+    screenShader screen_shader;
+
+    if(buildShader(&screen_shader.prog, "shaders/screen/vert.glsl", "shaders/screen/frag.glsl") == -1) {
+        return -1;
+    }
+
+    glUseProgram(screen_shader.prog);
+    glUniform1i(glGetUniformLocation(screen_shader.prog, "canvas_tex"), CANVAS_TEX);
+
+    screen_shader.dim = glGetUniformLocation(screen_shader.prog, "screen_dim");
+    screen_shader.off = glGetUniformLocation(screen_shader.prog, "offset");
+    screen_shader.zoom = glGetUniformLocation(screen_shader.prog, "zoom");
+
     Canvas canvas;
     setDim2(&canvas.size, CANV_WIDTH, CANV_HEIGHT);
+    setColRGBA(&canvas.pen_col, 255, 200, 200, 255);
     divVec2SI(subVec2(&canvas.off, &window->size, &canvas.size), 2);
     rstBaseOff(&canvas);
     canvas.zoom_scale = 1;
     canvas.zoom = 1;
     canvas.zoom_updt = 1;
     canvas.off_updt = 1;
+    canvas.col_updt = 1;
     createCanvasVAO(&canvas);
     if(createCanvasFBO(&canvas) == -1) {
         return -1;
     }
-    setColRGBA(&canvas.pen_col, 255, 200, 200, 255);
 
-    GLuint canvas_vao;
-    genSquareVAO(canvas.size.h, 0, 0, canvas.size.w, &canvas_vao, NULL);
-
-    glUseProgram(screen_shader);
-    glUniform1i(glGetUniformLocation(screen_shader, "canvas_tex"), CANVAS_TEX);
-
-    GLuint screen_loc = glGetUniformLocation(screen_shader, "screen_dim");
-    GLuint offset_loc = glGetUniformLocation(screen_shader, "offset");
-    GLuint zoom_loc = glGetUniformLocation(screen_shader, "zoom");
-
-    glUseProgram(canvas_shader);
-    glUniform1i(glGetUniformLocation(canvas_shader, "canvas_tex"), CANVAS_TEX);
-
-    GLuint mouse_loc = glGetUniformLocation(canvas_shader, "mouse_pos");
-    GLuint prev_mouse_loc = glGetUniformLocation(canvas_shader, "prev_mouse_pos");
-    GLuint colour_loc = glGetUniformLocation(canvas_shader, "colour");
-
-    uniformColRGBA(colour_loc, &canvas.pen_col);
+    GLuint screen_vao;
+    genSquareVAO(canvas.size.h, 0, 0, canvas.size.w, &screen_vao, NULL);
 
     // Set the time in ms that the game starts.
     uint64_t prev_time = SDL_GetTicks64();
@@ -253,43 +314,10 @@ int runApp(dispWindow *window) {
         prev_time = time_value;
 
         if(window->lmb_down) {
-            glUseProgram(canvas_shader);
-
-            uniformIVec2(prev_mouse_loc, &canvas.prev_pen);
-            uniformIVec2(mouse_loc, &canvas.pen);
-            cpyVec2(&canvas.prev_pen, &canvas.pen);
-    
-            glBindFramebuffer(GL_FRAMEBUFFER, canvas.FBO);
-            glBindVertexArray(canvas.draw_vao);
-            glViewport(0, 0,canvas.size.w, canvas.size.h);
-            glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+            updateCanvas(&canvas, &canvas_shader);
         }
 
-        glUseProgram(screen_shader);
-        if(window->rmb_down) {
-            divVec2SI(subVec2(&canvas.new_off, &window->mouse, &window->rmb_down_pos), canvas.zoom);
-            updateOff(&canvas);
-        }
-
-        if(window->resized) {
-            window->resized = 0;
-            uniformIVec2(screen_loc, &window->size);
-        }
-        if(canvas.off_updt) {
-            canvas.off_updt = 0;
-            uniformVec2(offset_loc, &canvas.off);
-        }
-        if(canvas.zoom_updt) {
-            canvas.zoom_updt = 0;
-            glUniform1f(zoom_loc, canvas.zoom);
-        }
-
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
-        glBindVertexArray(canvas_vao);
-        glViewport(0, 0, window->size.w, window->size.h);
-        glClearColor(0.1, 0.2, 0.2, 1.0);
-        glClear(GL_COLOR_BUFFER_BIT);
-        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+        updateScreen(&canvas, window, &screen_shader, screen_vao);
 
         swapWindow(window);
     }
