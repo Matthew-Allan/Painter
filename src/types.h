@@ -10,28 +10,11 @@ typedef struct vec2 {
 
 typedef vec2 dim2;
 
-void setVec2(vec2 *pos, float x, float y);
-void cpyVec2(vec2 *dst, vec2 *src);
-
-#define setDim2(dim, w, h) setVec2(dim, w, h);
-#define cpyDim2(dst, src) setVec2(dst, src);
-
-typedef struct ivec2 {
-    int x;
-    int y;
-} ivec2;
-
-void setIVec2(ivec2 *pos, int x, int y);
-void cpyIVec2(ivec2 *dst, ivec2 *src);
-
 typedef struct colRGB {
     uint8_t r;
     uint8_t g;
     uint8_t b;
 } colRGB;
-
-void setColRGB(colRGB *col, uint8_t r, uint8_t g, uint8_t b);
-void cpyColRGB(colRGB *dst, colRGB *src);
 
 typedef struct colRGBA {
     uint8_t r;
@@ -40,7 +23,46 @@ typedef struct colRGBA {
     uint8_t a;
 } colRGBA;
 
+void printVec2(vec2 *vec, const char *end);
+
+vec2 *setVec2(vec2 *pos, float x, float y);
+vec2 *cpyVec2(vec2 *dst, vec2 *src);
+
+vec2 *addVec2(vec2 *dst, vec2 *a, vec2 *b);
+vec2 *addVec2I(vec2 *dst, vec2 *src);
+vec2 *addVec2V(vec2 *dst, vec2 *src, float x, float y);
+vec2 *addVec2VI(vec2 *dst, float x, float y);
+vec2 *addVec2S(vec2 *dst, vec2 *src, float val);
+vec2 *addVec2SI(vec2 *dst, float val);
+
+vec2 *subVec2(vec2 *dst, vec2 *a, vec2 *b);
+vec2 *subVec2I(vec2 *dst, vec2 *src);
+vec2 *subVec2V(vec2 *dst, vec2 *src, float x, float y);
+vec2 *subVec2VI(vec2 *dst, float x, float y);
+vec2 *subVec2S(vec2 *dst, vec2 *src, float val);
+vec2 *subVec2SI(vec2 *dst, float val);
+
+vec2 *divVec2(vec2 *dst, vec2 *a, vec2 *b);
+vec2 *divVec2I(vec2 *dst, vec2 *src);
+vec2 *divVec2V(vec2 *dst, vec2 *src, float x, float y);
+vec2 *divVec2VI(vec2 *dst, float x, float y);
+vec2 *divVec2S(vec2 *dst, vec2 *src, float val);
+vec2 *divVec2SI(vec2 *dst, float val);
+
+vec2 *mltVec2(vec2 *dst, vec2 *a, vec2 *b);
+vec2 *mltVec2I(vec2 *dst, vec2 *src);
+vec2 *mltVec2V(vec2 *dst, vec2 *src, float x, float y);
+vec2 *mltVec2VI(vec2 *dst, float x, float y);
+vec2 *mltVec2S(vec2 *dst, vec2 *src, float val);
+vec2 *mltVec2SI(vec2 *dst, float val);
+
+#define setDim2(dim, w, h) setVec2(dim, w, h)
+#define cpyDim2(dst, src) setVec2(dst, src)
+
+void setColRGB(colRGB *col, uint8_t r, uint8_t g, uint8_t b);
+void cpyColRGB(colRGB *dst, colRGB *src);
 void setColRGBA(colRGBA *col, uint8_t r, uint8_t g, uint8_t b, uint8_t a);
 void cpyColRGBA(colRGBA *dst, colRGBA *src);
+
 
 #endif

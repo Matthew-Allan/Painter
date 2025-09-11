@@ -16,8 +16,9 @@ typedef struct Canvas {
     GLuint FBO;
     GLuint tex;
     dim2 size;
-    vec2 off;
+    vec2 base_off;
     vec2 new_off;
+    vec2 off;
     vec2 pen;
     vec2 prev_pen;
     colRGBA pen_col;
@@ -104,29 +105,30 @@ int createCanvasFBO(Canvas *canvas) {
     return 0;
 }
 
-void mouseToPixPos(vec2 *pos, int x, int y, int screen_height) {
-    pos->x = 2 * x;
-    pos->y = screen_height - (2 * y);
+void mouseToPixPos(vec2 *pos, vec2 *scale, int x, int y) {
+    mltVec2V(pos, scale, x, y);
 }
 
 void calculatePenPos(Canvas *canvas, dispWindow *window) {
-    canvas->pen.x = (window->mouse.x / canvas->zoom) - (canvas->off.x + canvas->new_off.x);
-    canvas->pen.y = (window->mouse.y / canvas->zoom) - (canvas->off.y + canvas->new_off.y);
+    subVec2I(divVec2S(&canvas->pen, &window->mouse, canvas->zoom), &canvas->off);
 }
 
-void addNewOff(Canvas *canvas) {
-    canvas->off.x += canvas->new_off.x;
-    canvas->off.y += canvas->new_off.y;
+void updateOff(Canvas *canvas) {
+    addVec2(&canvas->off, &canvas->base_off, &canvas->new_off);
+}
+
+void rstBaseOff(Canvas *canvas) {
     setVec2(&canvas->new_off, 0, 0);
+    cpyVec2(&canvas->base_off, &canvas->off);
 }
 
 void zoomCentered(Canvas *canvas, dispWindow *window, vec2 *canv_center, vec2 *wind_center, float zoom) {
     canvas->zoom_scale += zoom;
     canvas->zoom = canvas->zoom_scale * canvas->zoom_scale;
     cpyVec2(&window->rmb_down_pos, &window->mouse);
-    addNewOff(canvas);
-    canvas->off.x = (wind_center->x / canvas->zoom) - canv_center->x;
-    canvas->off.y = (wind_center->y / canvas->zoom) - canv_center->y;
+    rstBaseOff(canvas);
+    subVec2I(divVec2S(&canvas->base_off, wind_center, canvas->zoom), canv_center);
+    updateOff(canvas);
 }
 
 // Check for any SDL events. Handles quitting and button presses. Returns if game should keep running.
@@ -147,7 +149,7 @@ void pollEvents(dispWindow *window, Canvas *canvas) {
             zoomCentered(canvas, window, &canvas->pen, &window->mouse, event.wheel.preciseY * 0.1);
             break;
         case SDL_MOUSEMOTION:
-            mouseToPixPos(&window->mouse, event.motion.x, event.motion.y, window->size.h);
+            mouseToPixPos(&window->mouse, &window->pix_scale, event.motion.x, event.motion.y);
             if(!window->rmb_down) {
                 calculatePenPos(canvas, window);
             }
@@ -158,7 +160,7 @@ void pollEvents(dispWindow *window, Canvas *canvas) {
                 window->lmb_down = 0;
             } else if (event.button.button == 3) {
                 window->rmb_down = 0;
-                addNewOff(canvas);
+                rstBaseOff(canvas);
                 calculatePenPos(canvas, window);
             }
             break;
@@ -168,7 +170,7 @@ void pollEvents(dispWindow *window, Canvas *canvas) {
                 cpyVec2(&canvas->prev_pen, &canvas->pen);
             } else if (event.button.button == 3) {
                 window->rmb_down = 1;
-                mouseToPixPos(&window->rmb_down_pos, event.button.x, event.button.y, window->size.h);
+                mouseToPixPos(&window->rmb_down_pos, &window->pix_scale, event.button.x, event.button.y);
             }
             break;
         default:
@@ -189,9 +191,8 @@ int runApp(dispWindow *window) {
 
     Canvas canvas;
     setDim2(&canvas.size, 64, 64);
-    canvas.off.x = (window->size.w - (int) canvas.size.w) / 2;
-    canvas.off.y = (window->size.h - (int) canvas.size.h) / 2;
-    setVec2(&canvas.new_off, 0, 0);
+    divVec2SI(subVec2(&canvas.off, &window->size, &canvas.size), 2);
+    rstBaseOff(&canvas);
     canvas.zoom_scale = 1;
     canvas.zoom = 1;
     createCanvasVAO(&canvas);
@@ -247,11 +248,11 @@ int runApp(dispWindow *window) {
 
         glUseProgram(shader);
         if(window->rmb_down) {
-            canvas.new_off.x = (window->mouse.x - window->rmb_down_pos.x) / canvas.zoom;
-            canvas.new_off.y = (window->mouse.y - window->rmb_down_pos.y) / canvas.zoom;
+            divVec2SI(subVec2(&canvas.new_off, &window->mouse, &window->rmb_down_pos), canvas.zoom);
+            updateOff(&canvas);
         }
 
-        glUniform2f(offset_loc, canvas.off.x + canvas.new_off.x, canvas.off.y + canvas.new_off.y);
+        glUniform2f(offset_loc, canvas.off.x, canvas.off.y);
         glUniform2i(screen_loc, window->size.w, window->size.h);
         glUniform1f(zoom_loc, canvas.zoom);
 

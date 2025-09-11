@@ -22,6 +22,7 @@
 typedef struct dispWindow {
     SDL_Window *window;
     dim2 size;
+    vec2 pix_scale;
     vec2 mouse;
     vec2 rmb_down_pos;
     uint running : 1;

@@ -72,8 +72,8 @@ dispWindow *createWindow(const char *title, int width, int height) {
         return NULL;
     }
 
-    // Set viewport to the correct width and height.
     updateWindowSize(window);
+    divVec2V(&window->pix_scale, &window->size, width, height);
 
     window->running = 1;
     window->lmb_down = 0;
